@@ -447,13 +447,19 @@ typedef struct _tagNET_PACKET_INFO
 struct _tagRxNetDescriptor {
     LIST_ENTRY listEntry;
     LIST_ENTRY ReceiveQueueListEntry;
-
-#define PARANDIS_FIRST_RX_DATA_PAGE   (1)
+    USHORT BufferSGLength;
+    // number of configured pages
+    USHORT NumPages;
+    // might be 0 or 1 (if combined)
+    USHORT HeaderPage;
+    // data is always pages[1] but might
+    // be after the virtio header
+    USHORT DataStartOffset;
+#define PARANDIS_FIRST_RX_DATA_PAGE (1)
     struct VirtIOBufferDescriptor *BufferSGArray;
-    tCompletePhysicalAddress      *PhysicalPages;
-    ULONG                          BufferSGLength;
-    tCompletePhysicalAddress       IndirectArea;
-    tPacketHolderType              Holder;
+    tCompletePhysicalAddress *PhysicalPages;
+    tCompletePhysicalAddress IndirectArea;
+    tPacketHolderType Holder;
 
     NET_PACKET_INFO PacketInfo;
 
