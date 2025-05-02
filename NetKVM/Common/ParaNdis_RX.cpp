@@ -196,7 +196,10 @@ pRxNetDescriptor CParaNdisRX::CreateRxDescriptorOnInit()
             if (ulPagesToAlloc == 1)
                 goto error_exit;
             else
+            {
                 ulPagesToAlloc /= 2;
+                sizeToAlloc = PAGE_SIZE * ulPagesToAlloc;
+            }
         }
 
         p->BufferSGArray[p->BufferSGLength].physAddr = p->PhysicalPages[p->BufferSGLength].Physical;
