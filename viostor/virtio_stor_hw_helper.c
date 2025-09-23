@@ -139,10 +139,8 @@ RhelDoFlush(PVOID DeviceExtension, PSRB_TYPE Srb, BOOLEAN resend, BOOLEAN bIsr)
     }
     vq = adaptExt->vq[QueueNumber];
     element = &adaptExt->processing_srbs[QueueNumber];
-    if (virtqueue_add_buf(vq,
-                     &srbExt->sg[0],
-                     srbExt->out, srbExt->in,
-                     &srbExt->vbr, va, pa) == VQ_ADD_BUFFER_SUCCESS)
+    if (virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa) ==
+        VQ_ADD_BUFFER_SUCCESS)
     {
         notify = virtqueue_kick_prepare(vq);
         InsertTailList(&element->srb_list, &srbExt->vbr.list_entry);
@@ -152,7 +150,7 @@ RhelDoFlush(PVOID DeviceExtension, PSRB_TYPE Srb, BOOLEAN resend, BOOLEAN bIsr)
             VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
         }
 #ifdef DBG
-        InterlockedIncrement((LONG volatile*)&adaptExt->inqueue_cnt);
+        InterlockedIncrement((LONG volatile *)&adaptExt->inqueue_cnt);
 #endif
         result = TRUE;
     }
@@ -227,17 +225,15 @@ RhelDoReadWrite(PVOID DeviceExtension, PSRB_TYPE Srb)
     }
     vq = adaptExt->vq[QueueNumber];
     element = &adaptExt->processing_srbs[QueueNumber];
-    if (virtqueue_add_buf(vq,
-                     &srbExt->sg[0],
-                     srbExt->out, srbExt->in,
-                     &srbExt->vbr, va, pa) == VQ_ADD_BUFFER_SUCCESS)
+    if (virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa) ==
+        VQ_ADD_BUFFER_SUCCESS)
     {
         notify = virtqueue_kick_prepare(vq);
         InsertTailList(&element->srb_list, &srbExt->vbr.list_entry);
         element->srb_cnt++;
         VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
 #ifdef DBG
-        InterlockedIncrement((LONG volatile*)&adaptExt->inqueue_cnt);
+        InterlockedIncrement((LONG volatile *)&adaptExt->inqueue_cnt);
 #endif
         result = TRUE;
     }
@@ -382,17 +378,15 @@ RhelDoUnMap(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
     }
     vq = adaptExt->vq[QueueNumber];
     element = &adaptExt->processing_srbs[QueueNumber];
-    if (virtqueue_add_buf(vq,
-                     &srbExt->sg[0],
-                     srbExt->out, srbExt->in,
-                     &srbExt->vbr, va, pa) == VQ_ADD_BUFFER_SUCCESS)
+    if (virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa) ==
+        VQ_ADD_BUFFER_SUCCESS)
     {
         notify = virtqueue_kick_prepare(vq);
         InsertTailList(&element->srb_list, &srbExt->vbr.list_entry);
         element->srb_cnt++;
         VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
 #ifdef DBG
-        InterlockedIncrement((LONG volatile*)&adaptExt->inqueue_cnt);
+        InterlockedIncrement((LONG volatile *)&adaptExt->inqueue_cnt);
 #endif
         result = TRUE;
     }
@@ -478,17 +472,15 @@ RhelGetSerialNumber(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
     }
     vq = adaptExt->vq[QueueNumber];
     element = &adaptExt->processing_srbs[QueueNumber];
-    if (virtqueue_add_buf(vq,
-                     &srbExt->sg[0],
-                     srbExt->out, srbExt->in,
-                     &srbExt->vbr, va, pa) == VQ_ADD_BUFFER_SUCCESS)
+    if (virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa) ==
+        VQ_ADD_BUFFER_SUCCESS)
     {
         notify = virtqueue_kick_prepare(vq);
         InsertTailList(&element->srb_list, &srbExt->vbr.list_entry);
         element->srb_cnt++;
         VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
 #ifdef DBG
-        InterlockedIncrement((LONG volatile*)&adaptExt->inqueue_cnt);
+        InterlockedIncrement((LONG volatile *)&adaptExt->inqueue_cnt);
 #endif
         result = TRUE;
     }
