@@ -17,7 +17,6 @@ static void ParaNdis_UnbindRxBufferFromPacket(
     pRxNetDescriptor p)
 {
     PMDL NextMdlLinkage = p->Holder;
-    ULONG ulPageDescIndex = PARANDIS_FIRST_RX_DATA_PAGE;
 
     while (NextMdlLinkage != NULL)
     {
@@ -25,7 +24,6 @@ static void ParaNdis_UnbindRxBufferFromPacket(
         NextMdlLinkage = NDIS_MDL_LINKAGE(pThisMDL);
 
         NdisFreeMdl(pThisMDL);
-        ulPageDescIndex++;
     }
 }
 
@@ -43,7 +41,7 @@ static BOOLEAN ParaNdis_BindRxBufferToPacket(
     // the packet pattern because it is looking for it in wrong
     // place, i.e. the driver fails to process the NB with offset
     // that is not zero. TODO: open the bug report.
-    for (i = PARANDIS_FIRST_RX_DATA_PAGE; i < p->NumPages; i++)
+    for (i = p->FirstRxDataPage; i < p->NumPages; i++)
     {
         *NextMdlLinkage = NdisAllocateMdl(pContext->MiniportHandle,
                                           RtlOffsetToPointer(p->PhysicalPages[i].Virtual, offset),
@@ -79,7 +77,7 @@ static void ParaNdis_FreeRxBufferDescriptor(PARANDIS_ADAPTER *pContext, pRxNetDe
     ULONG i;
 
     ParaNdis_UnbindRxBufferFromPacket(p);
-    for (i = 0; i < p->NumPages; i++)
+    for (i = 0; i < p->NumOwnedPages; i++)
     {
         if (!p->PhysicalPages[i].Virtual)
             break;
@@ -189,7 +187,9 @@ pRxNetDescriptor CParaNdisRX::CreateRxDescriptorOnInit()
 
     p->BufferSGLength = 0;
     p->HeaderPage = m_Context->RxLayout.ReserveForHeader ? 0 : 1;
+    p->FirstRxDataPage = 1;
     p->DataStartOffset = (p->HeaderPage == 0) ? 0 : (USHORT)m_Context->nVirtioHeaderSize;
+    p->OriginalPhysicalPages = p->PhysicalPages;
     auto &pageNumber = p->NumPages;
 
     while (ulNumDataPages > 0)
@@ -256,6 +256,8 @@ pRxNetDescriptor CParaNdisRX::CreateRxDescriptorOnInit()
 
     if (!ParaNdis_BindRxBufferToPacket(m_Context, p))
         goto error_exit;
+
+    p->NumOwnedPages = p->NumPages;
 
     return p;
 
