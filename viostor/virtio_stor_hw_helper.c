@@ -105,12 +105,6 @@ RhelDoFlush(PVOID DeviceExtension, PSRB_TYPE Srb, BOOLEAN resend, BOOLEAN bIsr)
         }
     }
 
-    if (adaptExt->reset_in_progress)
-    {
-        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
-        return TRUE;
-    }
-
     srbExt->MessageID = MessageId;
 
     srbExt->vbr.out_hdr.sector = 0;
@@ -129,6 +123,19 @@ RhelDoFlush(PVOID DeviceExtension, PSRB_TYPE Srb, BOOLEAN resend, BOOLEAN bIsr)
     if (!resend)
     {
         VioStorVQLock(DeviceExtension, MessageId, &LockHandle, FALSE);
+        if (adaptExt->reset_in_progress_count)
+        {
+            VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
+            SRB_SET_DATA_TRANSFER_LENGTH(Srb, 0);
+            CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
+            return TRUE;
+        }
+    }
+    else if (adaptExt->reset_in_progress_count)
+    {
+        SRB_SET_DATA_TRANSFER_LENGTH(Srb, 0);
+        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
+        return TRUE;
     }
     add_buffer_req_status = virtqueue_add_buf(adaptExt->vq[QueueNumber],
                                               &srbExt->sg[0],
@@ -207,16 +214,17 @@ RhelDoReadWrite(PVOID DeviceExtension, PSRB_TYPE Srb)
         }
     }
 
-    if (adaptExt->reset_in_progress)
-    {
-        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
-        return TRUE;
-    }
-
     srbExt->MessageID = MessageId;
     RhelDbgPrint(TRACE_LEVEL_VERBOSE, " QueueNumber 0x%x vq = %p\n", QueueNumber, adaptExt->vq[QueueNumber]);
 
     VioStorVQLock(DeviceExtension, MessageId, &LockHandle, FALSE);
+    if (adaptExt->reset_in_progress_count)
+    {
+        VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
+        SRB_SET_DATA_TRANSFER_LENGTH(Srb, 0);
+        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
+        return TRUE;
+    }
     add_buffer_req_status = virtqueue_add_buf(adaptExt->vq[QueueNumber],
                                               &srbExt->sg[0],
                                               srbExt->out,
@@ -360,12 +368,6 @@ RhelDoUnMap(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
         }
     }
 
-    if (adaptExt->reset_in_progress)
-    {
-        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
-        return TRUE;
-    }
-
     srbExt->MessageID = MessageId;
     RhelDbgPrint(TRACE_LEVEL_INFORMATION,
                  " QueueNumber 0x%x vq = %p type = %d\n",
@@ -374,6 +376,13 @@ RhelDoUnMap(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
                  srbExt->vbr.out_hdr.type);
 
     VioStorVQLock(DeviceExtension, MessageId, &LockHandle, FALSE);
+    if (adaptExt->reset_in_progress_count)
+    {
+        VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
+        SRB_SET_DATA_TRANSFER_LENGTH(Srb, 0);
+        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
+        return TRUE;
+    }
     add_buffer_req_status = virtqueue_add_buf(adaptExt->vq[QueueNumber],
                                               &srbExt->sg[0],
                                               srbExt->out,
@@ -449,12 +458,6 @@ RhelGetSerialNumber(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
             RhelDbgPrint(TRACE_LEVEL_ERROR, " StorPortGetStartIoPerfParams failed srb %p status 0x%x.\n", Srb, status);
         }
     }
-    if (adaptExt->reset_in_progress)
-    {
-        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
-        return TRUE;
-    }
-
     srbExt->MessageID = MessageId;
 
     srbExt->vbr.out_hdr.sector = 0;
@@ -472,6 +475,13 @@ RhelGetSerialNumber(IN PVOID DeviceExtension, IN PSRB_TYPE Srb)
     srbExt->sg[2].length = sizeof(srbExt->vbr.status);
 
     VioStorVQLock(DeviceExtension, MessageId, &LockHandle, FALSE);
+    if (adaptExt->reset_in_progress_count)
+    {
+        VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
+        SRB_SET_DATA_TRANSFER_LENGTH(Srb, 0);
+        CompleteRequestWithStatus(DeviceExtension, Srb, SRB_STATUS_BUS_RESET);
+        return TRUE;
+    }
     add_buffer_req_status = virtqueue_add_buf(adaptExt->vq[QueueNumber],
                                               &srbExt->sg[0],
                                               srbExt->out,
