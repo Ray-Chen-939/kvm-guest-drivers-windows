@@ -66,9 +66,6 @@ private:
         UINT16 ExpectedBuffers;
         UINT16 CollectedBuffers;
         UINT32 TotalPacketLength;
-
-        // Pre-allocated array for merged packet assembly (eliminates allocate/copy/free in hot path)
-        tCompletePhysicalAddress PhysicalPages[VIRTIO_NET_MAX_MRG_BUFS];
     } m_MergeContext;
 
     void ReuseReceiveBufferNoLock(pRxNetDescriptor pBuffersDescriptor);
