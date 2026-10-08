@@ -188,6 +188,7 @@ RhelDoReadWrite(PVOID DeviceExtension, PSRB_TYPE Srb)
     ULONG status = STOR_STATUS_SUCCESS;
     struct virtqueue *vq = NULL;
     PREQUEST_LIST element;
+    int add_result;
 
     SET_VA_PA();
 
@@ -225,8 +226,8 @@ RhelDoReadWrite(PVOID DeviceExtension, PSRB_TYPE Srb)
     }
     vq = adaptExt->vq[QueueNumber];
     element = &adaptExt->processing_srbs[QueueNumber];
-    if (virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa) ==
-        VQ_ADD_BUFFER_SUCCESS)
+    add_result = virtqueue_add_buf(vq, &srbExt->sg[0], srbExt->out, srbExt->in, &srbExt->vbr, va, pa);
+    if (add_result == VQ_ADD_BUFFER_SUCCESS)
     {
         notify = virtqueue_kick_prepare(vq);
         InsertTailList(&element->srb_list, &srbExt->vbr.list_entry);
@@ -240,6 +241,13 @@ RhelDoReadWrite(PVOID DeviceExtension, PSRB_TYPE Srb)
     else
     {
         VioStorVQUnlock(DeviceExtension, MessageId, &LockHandle, FALSE);
+        if (add_result == -ENOSPC)
+        {
+            UCHAR scsiStatus = SCSISTAT_QUEUE_FULL;
+
+            /* Report descriptor exhaustion as queue-full, not generic busy. */
+            SRB_SET_SCSI_STATUS(Srb, scsiStatus);
+        }
         RhelDbgPrint(TRACE_LEVEL_ERROR, " Can not add packet to queue %d.\n", QueueNumber);
         StorPortBusy(DeviceExtension, 2);
     }
