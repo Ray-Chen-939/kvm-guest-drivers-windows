@@ -17,6 +17,7 @@ static void ParaNdis_UnbindRxBufferFromPacket(
     pRxNetDescriptor p)
 {
     PMDL NextMdlLinkage = p->Holder;
+    p->Holder = NULL;
 
     while (NextMdlLinkage != NULL)
     {
@@ -308,6 +309,8 @@ pRxNetDescriptor CParaNdisRX::CreateRxDescriptorOnInit()
             p->BufferSGLength++;
         }
         pageNumber++;
+        // Keep ownership valid if a later physical allocation or MDL bind fails.
+        p->NumOwnedPages = pageNumber;
         ulNumDataPages -= ulPagesToAlloc;
     }
 
@@ -347,8 +350,6 @@ pRxNetDescriptor CParaNdisRX::CreateRxDescriptorOnInit()
 
     if (!ParaNdis_BindRxBufferToPacket(m_Context, p))
         goto error_exit;
-
-    p->NumOwnedPages = p->NumPages;
 
     return p;
 
@@ -406,16 +407,17 @@ void CParaNdisRX::ReuseReceiveBufferNoLock(pRxNetDescriptor pBuffersDescriptor)
     {
         DPrintf(4, "Reusing merged packet with %u additional buffers", pBuffersDescriptor->MergedBufferCount);
 
+        // Unlink before reuse can free a constituent buffer on AddBuf failure.
+        USHORT mergedBufferCount = pBuffersDescriptor->MergedBufferCount;
+        DisassembleMergedPacket(pBuffersDescriptor);
+
         // Reuse additional buffers stored in inline array
         // Note: Additional buffers retain their original MDLs (we used pre-allocated
         //       FullPageMDLs in AssembleMergedPacket, so their original MDLs are intact)
-        for (USHORT i = 0; i < pBuffersDescriptor->MergedBufferCount; i++)
+        for (USHORT i = 0; i < mergedBufferCount; i++)
         {
             ReuseReceiveBufferNoLock(pBuffersDescriptor->MergedBuffers[i]);
         }
-
-        // Disassemble the first buffer back to its original single-buffer state
-        DisassembleMergedPacket(pBuffersDescriptor);
     }
 
     if (!m_Reinsert)
