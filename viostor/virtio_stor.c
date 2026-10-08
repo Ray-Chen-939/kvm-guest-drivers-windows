@@ -413,8 +413,14 @@ VirtIoFindAdapter(IN PVOID DeviceExtension,
     }
     else
     {
-        ConfigInfo->NumberOfPhysicalBreaks = max(SCSI_MINIMUM_PHYSICAL_BREAKS, (queueLength / 4));
-        adaptExt->queue_depth = max(((queueLength / ConfigInfo->NumberOfPhysicalBreaks) - 1), 1);
+        /*
+         * Keep the maximum transfer independent from the ring size. The
+         * request header and status consume two descriptors; use this as the
+         * baseline per-request ring budget and rely on the busy path when a
+         * fragmented request fills the queue.
+         */
+        ConfigInfo->NumberOfPhysicalBreaks = SCSI_MINIMUM_PHYSICAL_BREAKS;
+        adaptExt->queue_depth = max(queueLength / VIOSTOR_MIN_REQUEST_DESCRIPTORS, 1);
     }
     if (CHECKBIT(adaptExt->features, VIRTIO_BLK_F_SEG_MAX))
     {

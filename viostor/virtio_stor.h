@@ -90,6 +90,7 @@ typedef struct VirtIOBufferDescriptor VIO_SG, *PVIO_SG;
 
 #define MAX_PHYS_SEGMENTS                  512
 #define VIRTIO_MAX_SG                      (3 + MAX_PHYS_SEGMENTS)
+#define VIOSTOR_MIN_REQUEST_DESCRIPTORS     2
 
 #define VIOBLK_POOL_TAG                    'BoiV'
 
